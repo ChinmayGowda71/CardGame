@@ -8,8 +8,11 @@ class Model(nn.Module):
     self.shared_layers = nn.Sequential(
         nn.Linear(obs_space_size, 64),
         nn.ReLU(),
-        nn.Linear(64, 64),
-        nn.ReLU())
+        nn.Linear(64, 128),
+        nn.ReLU(),
+        nn.Linear(128, 64),
+        nn.ReLU()
+    )
     
     self.policy_layers = nn.Sequential(
         nn.Linear(64, 64),

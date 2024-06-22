@@ -18,35 +18,40 @@ class PPOTrainer():
     self.max_policy_train_iters = max_policy_train_iters
     self.value_train_iters = value_train_iters
 
-    policy_params = list(self.ac.shared_layers.parameters()) + \
-        list(self.ac.policy_layers.parameters())
+    policy_params = list(self.ac.shared_layers.parameters()) + list(self.ac.policy_layers.parameters())
     self.policy_optim = optim.Adam(policy_params, lr=policy_lr)
 
-    value_params = list(self.ac.shared_layers.parameters()) + \
-        list(self.ac.value_layers.parameters())
+    value_params = list(self.ac.shared_layers.parameters()) + list(self.ac.value_layers.parameters())
     self.value_optim = optim.Adam(value_params, lr=value_lr)
 
   def train_policy(self, obs, acts, old_log_probs, gaes):
     for _ in tqdm(range(self.max_policy_train_iters), desc='Training policy net'):
-      self.policy_optim.zero_grad()
+        self.policy_optim.zero_grad()
 
-      new_logits = self.ac.policy(obs)
-      new_logits = Categorical(logits=new_logits)
-      new_log_probs = new_logits.log_prob(acts)
+        new_logits = self.ac.policy(obs)
+        for i in range(len(obs)):
+            if obs[i][-1] != None:
+                for j in range(len(new_logits[i])):
+                    if j + 4 <= obs[i][-1]:
+                        new_logits[i][j] = -float('inf')
+        new_logits = Categorical(logits=new_logits)
+        new_log_probs = new_logits.log_prob(acts)
+        # print(obs, new_log_probs, old_log_probs)
 
-      policy_ratio = torch.exp(new_log_probs - old_log_probs)
-      clipped_ratio = policy_ratio.clamp(1 - self.ppo_clip_val, 1 + self.ppo_clip_val)
-      
-      clipped_loss = clipped_ratio * gaes
-      full_loss = policy_ratio * gaes
-      policy_loss = -torch.min(full_loss, clipped_loss).mean()
+        policy_ratio = torch.exp(new_log_probs - old_log_probs)
+        clipped_ratio = policy_ratio.clamp(1 - self.ppo_clip_val, 1 + self.ppo_clip_val)
+        
+        clipped_loss = clipped_ratio * gaes
+        full_loss = policy_ratio * gaes
+        policy_loss = -torch.min(full_loss, clipped_loss).mean()
 
-      policy_loss.backward()
-      self.policy_optim.step()
+        policy_loss.backward()
+        self.policy_optim.step()
 
-      kl_div = (old_log_probs - new_log_probs).mean()
-      if kl_div >= self.target_kl_div:
-        break
+        kl_div = (old_log_probs - new_log_probs).mean()
+        # print(kl_div)
+        if kl_div >= self.target_kl_div:
+            break
 
   def train_value(self, obs, returns):
     for _ in tqdm(range(self.value_train_iters), desc='Training value net'):
