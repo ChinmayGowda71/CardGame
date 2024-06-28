@@ -58,7 +58,7 @@ class Game:
 
         return state + [self.visible_sum]                
 
-    def play(self, train=True):
+    def play(self):
         for r in range(self.rounds):
             if self.r != 0:
                 self.visible_sum += self.cards[-self.r]
@@ -67,7 +67,7 @@ class Game:
             for p, player in enumerate(self.players):
                 bid_state, bid, bid_pred_value, bid_act_log_prob, bid_adj = player.play(self.encode_market_for_player(p), bid=True, round=r)
                 ask_state, ask, ask_pred_value, ask_act_log_prob, ask_adj = player.play(self.encode_market_for_player(p), bid=False, bid_val=bid, round=r)
-                if train:
+                if player.trainable:
                     bid_info[p] = [bid_state, bid, bid_pred_value, bid_act_log_prob]
                     ask_info[p] = [ask_state, ask, ask_pred_value, ask_act_log_prob]
                 if not bid_adj:
@@ -76,6 +76,7 @@ class Game:
                     ask += 4
                 self.market[p]["bid"] = bid
                 self.market[p]["ask"] = ask
+                self.market[p]['prev_bid_ask'] = [self.market[p]["bid"], self.market[p]["ask"]]
 
             cur_money = np.array([p.final_profit(self.cards_sum) for p in self.players])
 
@@ -97,22 +98,21 @@ class Game:
             profits = new_money - cur_money
             self.r += 1
 
-            if train:
-                for p in range(self.num_players):
-                    self.market[p]['prev_bid_ask'] = [self.market[p]["bid"], self.market[p]["ask"]]
+            for p in range(self.num_players):
+                if self.players[p].trainable:
                     for i, item in enumerate(bid_info[p][:2] + [profits[p]] + bid_info[p][2:]):
                         self.training_data[p]['bid'][i].append(item)
                     for i, item in enumerate(ask_info[p][:2] + [profits[p]] + ask_info[p][2:]):
                         self.training_data[p]['ask'][i].append(item)
                     
-        if train:
-            training_data = [np.empty((0, 10)), np.empty(0,), np.empty(0,), np.empty(0,), np.empty(0,)]
-            for p in range(self.num_players):
+        training_data = [np.empty((0, 10)), np.empty(0,), np.empty(0,), np.empty(0,), np.empty(0,)]
+        for p in range(self.num_players):
+            if self.players[p].trainable:
                 for act in ['bid', 'ask']:
                     self.training_data[p][act] = [np.asarray(x) for x in self.training_data[p][act]]
                     self.training_data[p][act][3] = calculate_advantages(self.training_data[p][act][2], self.training_data[p][act][3])
                     self.training_data[p][act][2] = discount_rewards(self.training_data[p][act][2])
                     for i in range(len(training_data)):
                         training_data[i] = np.append(training_data[i], self.training_data[p][act][i], axis=0)
-        
-            return training_data
+    
+        return training_data

@@ -1,32 +1,40 @@
 from torch import nn
+import torch
 
 # Policy and value model
 class Model(nn.Module):
-  def __init__(self, obs_space_size, action_space_size):
+  def __init__(self, obs_space_size, action_space):
     super().__init__()
 
     self.shared_layers = nn.Sequential(
-        nn.Linear(obs_space_size, 64),
+        nn.Linear(obs_space_size, 512),
         nn.ReLU(),
-        nn.Linear(64, 128),
+        nn.LayerNorm(512), 
+        nn.Linear(512, 256),
         nn.ReLU(),
-        nn.Linear(128, 256),
+        nn.LayerNorm(256),
+        nn.Linear(256, 128),
         nn.ReLU(),
-        nn.Linear(256, 512),
-        nn.ReLU(),
-        nn.Linear(512, 64),
-        nn.ReLU()
+        nn.LayerNorm(128)
     )
     
     self.policy_layers = nn.Sequential(
-        nn.Linear(64, 64),
-        nn.ReLU(),
-        nn.Linear(64, action_space_size))
+        nn.Linear(128, action_space)
+    )
     
     self.value_layers = nn.Sequential(
-        nn.Linear(64, 64),
-        nn.ReLU(),
-        nn.Linear(64, 1))
+        nn.Linear(128, 1),
+        nn.Tanh()
+    )
+    
+    self._initialize_weights()
+    
+  def _initialize_weights(self):
+    for m in self.modules():
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                torch.nn.init.zeros_(m.bias)
     
   def value(self, obs):
     z = self.shared_layers(obs)
