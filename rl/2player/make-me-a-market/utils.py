@@ -24,10 +24,10 @@ def calculate_advantages(rewards, values, gamma=0.99, decay=0.97):
     advantages = [deltas[-1]]
     for i in reversed(range(len(deltas)-1)):
         advantages.append(deltas[i] + decay * gamma * advantages[-1])
-
+        
     return np.array(advantages[::-1])
 
-def rollout(model, env, max_steps=1000):
+def rollout(model, env, max_steps=1000, inference=False):
     """
     Performs a single rollout.
     Returns training data in the shape (n_steps, observation_shape)
@@ -47,7 +47,7 @@ def rollout(model, env, max_steps=1000):
 
         next_obs, reward = env.step(pred_val.item())
 
-        for i, item in enumerate((obs, pred_val, reward, val.item(), log_prob)):
+        for i, item in enumerate((obs, pred_val.cpu().numpy(), reward, val.item(), log_prob)):
             train_data[i].append(item)
 
         obs = next_obs
@@ -59,5 +59,7 @@ def rollout(model, env, max_steps=1000):
 
     ### Do train data filtering
     train_data[3] = calculate_advantages(train_data[2], train_data[3])
-
-    return train_data, ep_reward
+    if not inference:
+        return train_data, ep_reward
+    else:
+    	return env.real_sum, env.guesses, env.pos_history

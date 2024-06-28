@@ -6,13 +6,15 @@ class Environment:
         self.round = 0
         self.mean = 45
         self.std = 15
-        self.real_sum = np.random.normal(self.mean, self.std)
-        self.real_sum = 60
+        self.real_sum = np.random.normal(self.mean, self.std / 4)
+        self.real_sum = round(self.real_sum)
+        # self.real_sum = 60
         self.real_sum = max(self.real_sum, 5)
         self.real_sum = min(self.real_sum, 85)
         self.taker_pnl = 0
         self.taker_pos = 0
         self.guesses = []
+        self.pos_history = []
 
     def reset(self):
         self.__init__()
@@ -45,6 +47,7 @@ class Environment:
             else:
                 self.taker_pnl -= (5 - self.round) * 2
             self.taker_pos = 0
+        self.pos_history.append(self.taker_pos)
 
         self.round += 1
         obs = [self.mean, self.std] + self.guesses + [0] * (5 - self.round) + [self.taker_pos]
@@ -65,7 +68,14 @@ class Environment:
         # if abs(self.taker_pos) >= 2:
         #     return None, reward
 
-        reward = -self.taker_pnl
+        pnl = self.taker_pnl
+
+        if self.taker_pos > 0:
+            pnl += self.taker_pos * self.real_sum
+        elif self.taker_pos < 0:
+            pnl -= self.taker_pos * self.real_sum
+
+        reward = -pnl
 
         if middle == self.real_sum:
             reward += 100
