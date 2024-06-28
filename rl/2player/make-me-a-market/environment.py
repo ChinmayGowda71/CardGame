@@ -8,6 +8,8 @@ class Environment:
         self.std = 15
         self.real_sum = np.random.normal(self.mean, self.std)
         self.real_sum = 60
+        self.real_sum = max(self.real_sum, 5)
+        self.real_sum = min(self.real_sum, 85)
         self.taker_pnl = 0
         self.taker_pos = 0
         self.guesses = []
@@ -29,14 +31,19 @@ class Environment:
             middle = 85 + self.round
         self.guesses.append(middle)
         
-        if middle + (5 - self.round) < self.real_sum: # ask is too low, dude will buy
+        if middle < self.real_sum: # ask is too low, dude will buy
             self.taker_pnl += self.real_sum - (middle + (5 - self.round))
             self.taker_pos += 1
-        elif middle - (5 - self.round) > self.real_sum: # bid is too high, dude will sell
+        elif middle > self.real_sum: # bid is too high, dude will sell
             self.taker_pnl += (middle - (5 - self.round)) - self.real_sum
             self.taker_pos -= 1
         else:
-            self.taker_pnl -= (5 - self.round) * 2
+            if self.taker_pos > 0:
+                self.taker_pnl += ((middle - (5 - self.round)) - self.real_sum) * self.taker_pos
+            elif self.taker_pos < 0:
+                self.taker_pnl += (self.real_sum - (middle + (5 - self.round))) * self.taker_pos
+            else:
+                self.taker_pnl -= (5 - self.round) * 2
             self.taker_pos = 0
 
         self.round += 1
@@ -59,6 +66,9 @@ class Environment:
         #     return None, reward
 
         reward = -self.taker_pnl
+
+        if middle == self.real_sum:
+            reward += 100
 
         if self.round == 5: # end of game
             return None, reward
