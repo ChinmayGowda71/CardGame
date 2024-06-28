@@ -6,7 +6,7 @@ class Environment:
         self.round = 0
         self.mean = 45
         self.std = 15
-        self.real_sum = np.random.normal(self.mean, self.std / 4)
+        self.real_sum = np.random.normal(self.mean, self.std)
         self.real_sum = round(self.real_sum)
         # self.real_sum = 60
         self.real_sum = max(self.real_sum, 5)
@@ -18,8 +18,7 @@ class Environment:
 
     def reset(self):
         self.__init__()
-        middle = 45
-        return self.step(middle)
+        return [self.mean, self.std] + self.guesses + [0] * (5 - self.round) + [self.taker_pos]
 
     def step(self, middle):
         # defining trader
@@ -51,9 +50,6 @@ class Environment:
 
         self.round += 1
         obs = [self.mean, self.std] + self.guesses + [0] * (5 - self.round) + [self.taker_pos]
-
-        if self.round == 1:
-            return obs
 
         if self.round == 5:
             if self.taker_pos > 0:
