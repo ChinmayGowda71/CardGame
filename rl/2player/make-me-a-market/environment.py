@@ -64,14 +64,7 @@ class Environment:
         # if abs(self.taker_pos) >= 2:
         #     return None, reward
 
-        pnl = self.taker_pnl
-
-        if self.taker_pos > 0:
-            pnl += self.taker_pos * self.real_sum
-        elif self.taker_pos < 0:
-            pnl -= self.taker_pos * self.real_sum
-
-        reward = -pnl
+        reward = -self.taker_pnl
 
         if middle == self.real_sum:
             reward += 100
