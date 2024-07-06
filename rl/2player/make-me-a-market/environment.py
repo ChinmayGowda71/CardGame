@@ -57,13 +57,6 @@ class Environment:
             elif self.taker_pos < 0:
                 self.taker_pnl -= self.taker_pos * self.real_sum
         
-        # diff = self.guesses[-1] - self.guesses[-2]
-
-        # reward = diff * self.taker_pos
-        # reward = 1
-        # if abs(self.taker_pos) >= 2:
-        #     return None, reward
-
         reward = -self.taker_pnl
 
         if middle == self.real_sum:

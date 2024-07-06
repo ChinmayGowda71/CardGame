@@ -2,6 +2,8 @@ import numpy as np
 import torch
 from torch.distributions.categorical import Categorical
 
+from environment import Environment
+
 DEVICE = 'cpu'
 
 def discount_rewards(rewards, gamma=0.99):
@@ -27,7 +29,7 @@ def calculate_advantages(rewards, values, gamma=0.99, decay=0.97):
         
     return np.array(advantages[::-1])
 
-def rollout(model, env, max_steps=1000, inference=False):
+def rollout(model, max_steps=1000, inference=False):
     """
     Performs a single rollout.
     Returns training data in the shape (n_steps, observation_shape)
@@ -35,6 +37,7 @@ def rollout(model, env, max_steps=1000, inference=False):
     """
     ### Create data storage
     train_data = [[], [], [], [], []] # obs, middle, reward, pred_val, log_prob
+    env = Environment()
     obs = env.reset()
 
     ep_reward = 0
