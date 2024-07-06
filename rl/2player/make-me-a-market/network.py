@@ -24,7 +24,7 @@ class Model(nn.Module):
     
     self.value_layers = nn.Sequential(
         nn.Linear(128, 1),
-        nn.Tanh()
+        # nn.Tanh()
     )
     
     self._initialize_weights()

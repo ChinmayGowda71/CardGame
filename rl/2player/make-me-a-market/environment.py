@@ -16,13 +16,18 @@ class Environment:
         self.guesses = []
         self.pos_history = []
 
+    def get_state(self):
+        scaled_guesses = [(i - 5) / 80 for i in self.guesses]
+        return scaled_guesses + [-1] * (5 - self.round) + [self.taker_pos]
+
     def reset(self):
         self.__init__()
-        return [self.mean, self.std] + self.guesses + [0] * (5 - self.round) + [self.taker_pos]
+        return self.get_state()
 
     def step(self, middle):
         # defining trader
-        # making sure that the market 
+        # making sure that the market
+        prev_pnl = self.taker_pnl 
 
         middle = round(middle)
         
@@ -49,7 +54,7 @@ class Environment:
         self.pos_history.append(self.taker_pos)
 
         self.round += 1
-        obs = [self.mean, self.std] + self.guesses + [0] * (5 - self.round) + [self.taker_pos]
+        obs = self.get_state()
 
         if self.round == 5:
             if self.taker_pos > 0:
@@ -57,7 +62,7 @@ class Environment:
             elif self.taker_pos < 0:
                 self.taker_pnl -= self.taker_pos * self.real_sum
         
-        reward = -self.taker_pnl
+        reward = -(self.taker_pnl - prev_pnl)
 
         if middle == self.real_sum:
             reward += 100
