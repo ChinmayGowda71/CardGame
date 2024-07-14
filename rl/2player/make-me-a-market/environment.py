@@ -18,7 +18,7 @@ class Environment:
 
     def get_state(self):
         scaled_guesses = [(i - 5) / 80 for i in self.guesses]
-        return scaled_guesses + [-1] * (5 - self.round) + [self.taker_pos]
+        return scaled_guesses + [-1] * (5 - self.round) + [self.taker_pos / 5]
 
     def reset(self):
         self.__init__()
@@ -54,7 +54,6 @@ class Environment:
         self.pos_history.append(self.taker_pos)
 
         self.round += 1
-        obs = self.get_state()
 
         if self.round == 5:
             if self.taker_pos > 0:
@@ -70,4 +69,4 @@ class Environment:
         if self.round == 5: # end of game
             return None, reward
         else:
-            return obs, reward
+            return self.get_state(), reward
